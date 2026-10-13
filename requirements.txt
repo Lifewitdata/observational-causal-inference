@@ -1,0 +1,22 @@
+# Core numerics. The estimators in src/cid need nothing beyond these three: there is no
+# statsmodels, no pyfixest and no R wrapper -- the estimators are hand-rolled so they stay readable.
+numpy>=1.26
+pandas>=2.1
+scipy>=1.11
+
+# Figures embedded in the notebooks
+matplotlib>=3.7
+
+# Notebook authoring and in-place execution (the committed .ipynb files carry their own outputs)
+nbformat>=5.9
+nbclient>=0.8
+nbconvert>=7.10
+jupyter-core>=5.5
+ipykernel>=6.25
+ipython>=8.12
+
+# Tests
+pytest>=8.0
+
+# Optional: the interactive explorer in app/
+streamlit>=1.32
