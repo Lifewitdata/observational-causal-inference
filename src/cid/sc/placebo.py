@@ -60,11 +60,14 @@ def in_space(
     pool = [u for u in panel[unit_col].unique() if u != treated]
     sub = panel[panel[unit_col].isin(pool)]
 
-    rows, gap_curves = [], {}
+    rows, gap_curves, failed = [], {}, []
     for d in pool:
         try:
             r = _run_fit(sub, d, **kwargs)
-        except (RuntimeError, KeyError, ValueError):
+        except (RuntimeError, KeyError, ValueError) as exc:
+            # recorded rather than dropped: a p-value whose denominator quietly shrank has to be
+            # visible, or the permutation test looks more honest than it is
+            failed.append({"unit": d, "error": str(exc)})
             continue
         rows.append(
             {
@@ -93,6 +96,7 @@ def in_space(
         "p_value_all_donors": all_ge,
         "p_value_pre_fit_filtered": restr_ge,
         "n_placebo": len(placebo),
+        "failed_placebos": failed,
     }
 
 

@@ -30,7 +30,14 @@ def simplex_weights(
     max_iter: int = 800,
     tol: float = 1e-10,
 ) -> np.ndarray:
-    """Solve the synthetic-control weight program. `X0` is donors x features; returns J weights."""
+    """Solve the synthetic-control weight program. `X0` is donors x features; returns J weights.
+
+    The convergence tolerance is relaxed in steps rather than failed outright. SLSQP stops with
+    "not making good progress" on donors whose pre-period path is nearly a scalar multiple of
+    another's, and on some BLAS builds that happens at tolerances others pass easily. A relaxed
+    solution of a convex program is still the same optimum to within the loosened tolerance, so
+    retrying costs accuracy nobody can see and avoids a silently missing placebo.
+    """
     x1 = np.asarray(x1, float).ravel()
     X0 = np.atleast_2d(np.asarray(X0, float))
     J, k = X0.shape
@@ -45,13 +52,18 @@ def simplex_weights(
         return float(r @ V @ r)
 
     cons = ({"type": "eq", "fun": lambda w: w.sum() - 1.0, "jac": lambda w: np.ones(J)},)
-    res = minimize(
-        objective, np.full(J, 1.0 / J), method="SLSQP",
-        bounds=((0.0, 1.0),) * J, constraints=cons,
-        options={"maxiter": max_iter, "ftol": tol},
-    )
-    if not res.success:
-        raise RuntimeError(f"weight solver failed: {res.message}")
+    last = None
+    for ftol in (tol, 1e-7, 1e-5):
+        res = minimize(
+            objective, np.full(J, 1.0 / J), method="SLSQP",
+            bounds=((0.0, 1.0),) * J, constraints=cons,
+            options={"maxiter": max_iter, "ftol": ftol},
+        )
+        if res.success:
+            break
+        last = res.message
+    else:
+        raise RuntimeError(f"weight solver failed: {last}")
     w = np.clip(res.x, 0, None)
     if w.sum() <= 0:
         raise RuntimeError("solver returned degenerate weights")

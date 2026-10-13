@@ -223,6 +223,12 @@ def sc_panel():
             f"donors that fit at least as well as California, **p = "
             f"{pl['p_value_pre_fit_filtered']:.3f}** \u2014 not significant."
         )
+        if pl["failed_placebos"]:
+            st.warning(
+                "The p-value denominator excludes "
+                + ", ".join(f["unit"] for f in pl["failed_placebos"])
+                + ": the constrained refit did not converge."
+            )
         st.pyplot(viz.placebo_overlay(
             pl["gap_curves"], res["gap"], res["pre_rmspe"], "California",
             "Placebo gaps: donor states (grey) vs California (red)",

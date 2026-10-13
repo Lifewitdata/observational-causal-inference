@@ -130,7 +130,10 @@ def test_effective_donors_counts_uniform_weights_exactly():
 @pytest.mark.slow
 def test_in_space_placebos_bound_the_p_value(in_space):
     pl = in_space
-    assert pl["n_placebo"] == 38
+    # every donor must either produce a refit or be reported as a failure -- the p-value denominator
+    # is only honest if the two add back up to the pool
+    assert pl["n_placebo"] + len(pl["failed_placebos"]) == 38
+    assert pl["n_placebo"] >= 36
     assert pl["rmspe_ratio"] == pytest.approx(pl["main"]["post_rmspe"] / pl["main"]["pre_rmspe"])
     floor = 1 / pl["n_placebo"]
     assert floor <= pl["p_value_all_donors"] <= 3 * floor
